@@ -1,0 +1,134 @@
+{% extends 'results/base.html' %}
+{% block title %}My Dashboard – SRMS{% endblock %}
+{% block page_title %}My Dashboard{% endblock %}
+
+{% block content %}
+<!-- Student info card -->
+<div class="row g-3 mb-4">
+  <div class="col-12">
+    <div class="stat-card">
+      <div class="d-flex align-items-center gap-4">
+        <div style="width:64px;height:64px;border-radius:50%;background:#4361ee;display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;font-weight:700;flex-shrink:0;">
+          {{ profile.user.first_name.0|upper }}{{ profile.user.last_name.0|upper }}
+        </div>
+        <div>
+          <h5 class="mb-1 fw-bold">{{ profile.user.get_full_name }}</h5>
+          <div class="d-flex flex-wrap gap-3 text-muted small">
+            <span><i class="bi bi-hash me-1"></i>{{ profile.roll_number }}</span>
+            <span><i class="bi bi-building me-1"></i>{{ profile.department }}</span>
+            <span><i class="bi bi-journal me-1"></i>Semester {{ profile.current_semester }}</span>
+            <span><i class="bi bi-envelope me-1"></i>{{ profile.user.email }}</span>
+          </div>
+        </div>
+        <div class="ms-auto">
+          <a href="{% url 'my_marksheet' %}" class="btn btn-primary">
+            <i class="bi bi-file-earmark-text me-1"></i>View Marksheet
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Semester-wise summary -->
+{% if sem_data %}
+<div class="row g-3 mb-4">
+  {% for sem, data in sem_data.items %}
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card text-center">
+      <div class="fw-semibold text-muted small mb-1">Semester {{ sem }}</div>
+      <div class="value" style="font-size:40px;color:#4361ee;">{{ data.gpa }}</div>
+      <div class="label">GPA / 10</div>
+      <div class="mt-2">
+        <small class="text-muted">{{ data.results|length }} subjects</small>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Performance Chart -->
+<div class="row g-3 mb-4">
+  <div class="col-lg-8">
+    <div class="stat-card">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="fw-semibold mb-0">Performance Chart</h6>
+        <select id="semFilter" class="form-select form-select-sm" style="width:auto;">
+          <option value="">All Semesters</option>
+          {% for s in semesters %}
+            <option value="{{ s }}">Semester {{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <canvas id="performanceChart" height="120"></canvas>
+    </div>
+  </div>
+
+  <!-- Result table -->
+  <div class="col-lg-4">
+    <div class="stat-card h-100">
+      <h6 class="fw-semibold mb-3">Subject Results</h6>
+      <div style="max-height:300px;overflow-y:auto;">
+        {% for r in results %}
+        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+          <div>
+            <div class="fw-semibold small">{{ r.subject.code }}</div>
+            <div class="text-muted" style="font-size:12px;">Sem {{ r.semester }}</div>
+          </div>
+          <div class="text-end">
+            <span class="grade-badge grade-{{ r.grade|cut:'+' }}">{{ r.grade }}</span>
+            <div class="text-muted" style="font-size:11px;">{{ r.marks_obtained }}/{{ r.subject.max_marks }}</div>
+          </div>
+        </div>
+        {% empty %}
+          <p class="text-muted small">No results yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let chart;
+function loadChart(semester = '') {
+  fetch(`/api/chart-data/?semester=${semester}`)
+    .then(r => r.json())
+    .then(data => {
+      const ctx = document.getElementById('performanceChart').getContext('2d');
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: data.labels,
+          datasets: [
+            {
+              label: 'Marks Obtained',
+              data: data.marks,
+              backgroundColor: data.colors,
+              borderRadius: 6,
+            },
+            {
+              label: 'Max Marks',
+              data: data.max_marks,
+              backgroundColor: 'rgba(0,0,0,0.05)',
+              borderRadius: 6,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'top' } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    });
+}
+loadChart();
+document.getElementById('semFilter').addEventListener('change', function() {
+  loadChart(this.value);
+});
+</script>
+{% endblock %}

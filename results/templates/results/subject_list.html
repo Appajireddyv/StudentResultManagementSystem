@@ -1,0 +1,55 @@
+{% extends 'results/base.html' %}
+{% block title %}Subjects – SRMS{% endblock %}
+{% block page_title %}Subjects{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h5 class="fw-bold mb-1">Subject Management</h5>
+    <p class="text-muted small mb-0">{{ subjects.count }} subject(s)</p>
+  </div>
+  <a href="{% url 'subject_add' %}" class="btn btn-primary">
+    <i class="bi bi-plus-circle me-1"></i>Add Subject
+  </a>
+</div>
+
+<div class="table-card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Code</th>
+          <th>Name</th>
+          <th>Department</th>
+          <th>Semester</th>
+          <th>Max Marks</th>
+          <th>Credits</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in subjects %}
+        <tr>
+          <td class="text-muted small">{{ forloop.counter }}</td>
+          <td><span class="badge bg-primary bg-opacity-10 text-primary fw-semibold">{{ s.code }}</span></td>
+          <td class="fw-semibold small">{{ s.name }}</td>
+          <td class="small">{{ s.department }}</td>
+          <td class="small">{{ s.semester }}</td>
+          <td class="small">{{ s.max_marks }}</td>
+          <td class="small">{{ s.credits }}</td>
+          <td>
+            <div class="btn-group btn-group-sm">
+              <a href="{% url 'subject_edit' s.pk %}" class="btn btn-outline-secondary" title="Edit"><i class="bi bi-pencil"></i></a>
+              <a href="{% url 'subject_delete' s.pk %}" class="btn btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+          <tr><td colspan="8" class="text-center text-muted py-5">No subjects found. <a href="{% url 'subject_add' %}">Add one</a>.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

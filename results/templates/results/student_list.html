@@ -1,0 +1,86 @@
+{% extends 'results/base.html' %}
+{% block title %}Students – SRMS{% endblock %}
+{% block page_title %}Students{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h5 class="fw-bold mb-1">Student Management</h5>
+    <p class="text-muted small mb-0">{{ students.count }} student(s) found</p>
+  </div>
+  <a href="{% url 'student_add' %}" class="btn btn-primary">
+    <i class="bi bi-person-plus me-1"></i>Add Student
+  </a>
+</div>
+
+<!-- Filters -->
+<div class="stat-card mb-4">
+  <form method="get" class="row g-2 align-items-end">
+    <div class="col-sm-6 col-md-5">
+      <label class="form-label small fw-semibold">Search</label>
+      <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Name or Roll No.">
+    </div>
+    <div class="col-sm-4 col-md-4">
+      <label class="form-label small fw-semibold">Department</label>
+      <select name="dept" class="form-select">
+        <option value="">All Departments</option>
+        {% for d in departments %}
+          <option value="{{ d.id }}" {% if dept == d.id|stringformat:'s' %}selected{% endif %}>{{ d.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-sm-2 col-md-3">
+      <button type="submit" class="btn btn-outline-primary w-100">Filter</button>
+    </div>
+  </form>
+</div>
+
+<div class="table-card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Name</th>
+          <th>Roll No.</th>
+          <th>Department</th>
+          <th>Semester</th>
+          <th>Email</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in students %}
+        <tr>
+          <td class="text-muted small">{{ forloop.counter }}</td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div style="width:32px;height:32px;border-radius:50%;background:#eef2ff;color:#4361ee;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;">
+                {{ s.user.first_name.0|upper }}{{ s.user.last_name.0|upper }}
+              </div>
+              <div>
+                <div class="fw-semibold small">{{ s.user.get_full_name }}</div>
+                <div class="text-muted" style="font-size:11px;">@{{ s.user.username }}</div>
+              </div>
+            </div>
+          </td>
+          <td class="small">{{ s.roll_number }}</td>
+          <td class="small">{{ s.department }}</td>
+          <td class="small">{{ s.current_semester }}</td>
+          <td class="small">{{ s.user.email|default:"-" }}</td>
+          <td>
+            <div class="btn-group btn-group-sm">
+              <a href="{% url 'student_detail' s.pk %}" class="btn btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
+              <a href="{% url 'student_edit' s.pk %}" class="btn btn-outline-secondary" title="Edit"><i class="bi bi-pencil"></i></a>
+              <a href="{% url 'student_delete' s.pk %}" class="btn btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+          <tr><td colspan="7" class="text-center text-muted py-5">No students found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

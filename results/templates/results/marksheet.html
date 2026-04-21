@@ -1,0 +1,171 @@
+{% extends 'results/base.html' %}
+{% block title %}My Marksheet – SRMS{% endblock %}
+{% block page_title %}My Marksheet{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="stat-card mb-4">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+    <div>
+      <h5 class="fw-bold mb-1">{{ profile.user.get_full_name }}</h5>
+      <div class="d-flex flex-wrap gap-3 text-muted small">
+        <span><i class="bi bi-hash me-1"></i>{{ profile.roll_number }}</span>
+        <span><i class="bi bi-building me-1"></i>{{ profile.department }}</span>
+        <span><i class="bi bi-journal me-1"></i>Current Semester: {{ profile.current_semester }}</span>
+      </div>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+      <form method="get" class="d-flex gap-2 align-items-center">
+        <label class="small fw-semibold mb-0">Semester:</label>
+        <select name="semester" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All</option>
+          {% for s in semesters %}
+            <option value="{{ s }}" {% if sel_semester == s|stringformat:'s' %}selected{% endif %}>Semester {{ s }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% if sel_semester %}
+  <!-- Single semester view -->
+  {% for sem, data in sem_data.items %}
+    {% if sem|stringformat:'s' == sel_semester %}
+    <div class="row g-3 mb-4">
+      <div class="col-sm-4">
+        <div class="stat-card text-center">
+          <div class="text-muted small mb-1">GPA</div>
+          <div class="fw-bold" style="font-size:40px;color:#4361ee;">{{ data.gpa }}</div>
+          <div class="text-muted small">out of 10.0</div>
+        </div>
+      </div>
+      <div class="col-sm-4">
+        <div class="stat-card text-center">
+          <div class="text-muted small mb-1">Subjects</div>
+          <div class="fw-bold" style="font-size:40px;color:#198754;">{{ data.results|length }}</div>
+          <div class="text-muted small">enrolled</div>
+        </div>
+      </div>
+      <div class="col-sm-4">
+        <div class="stat-card text-center">
+          <div class="text-muted small mb-1">Pass / Fail</div>
+          {% with passed=0 failed=0 %}
+          <div class="fw-bold" style="font-size:40px;color:#fd7e14;">
+            {% for r in data.results %}{% if r.is_pass %}✓{% endif %}{% endfor %} / {% for r in data.results %}{% if not r.is_pass %}✗{% endif %}{% endfor %}
+          </div>
+          {% endwith %}
+          <div class="text-muted small">subjects</div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  {% endfor %}
+{% else %}
+  <!-- All semesters GPA row -->
+  <div class="row g-2 mb-4">
+    {% for sem, data in sem_data.items %}
+    <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+      <div class="stat-card text-center p-3">
+        <div class="text-muted" style="font-size:11px;">Sem {{ sem }}</div>
+        <div class="fw-bold" style="font-size:26px;color:#4361ee;">{{ data.gpa }}</div>
+        <div class="text-muted" style="font-size:10px;">GPA</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<!-- Chart -->
+<div class="stat-card mb-4">
+  <h6 class="fw-semibold mb-3">Performance Chart</h6>
+  <canvas id="perfChart" height="100"></canvas>
+</div>
+
+<!-- Marksheet Table -->
+<div class="table-card">
+  <div class="p-3 border-bottom">
+    <h6 class="fw-semibold mb-0">
+      Marksheet
+      {% if sel_semester %}– Semester {{ sel_semester }}{% else %}– All Semesters{% endif %}
+    </h6>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Subject Code</th>
+          <th>Subject Name</th>
+          <th>Sem</th>
+          <th>Max</th>
+          <th>Obtained</th>
+          <th>%</th>
+          <th>Grade</th>
+          <th>GP</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in results %}
+        <tr {% if not r.is_pass %}style="background:#fff5f5;"{% endif %}>
+          <td class="text-muted small">{{ forloop.counter }}</td>
+          <td><span class="badge bg-primary bg-opacity-10 text-primary">{{ r.subject.code }}</span></td>
+          <td class="small">{{ r.subject.name }}</td>
+          <td class="small">{{ r.semester }}</td>
+          <td class="small">{{ r.subject.max_marks }}</td>
+          <td class="fw-semibold small">{{ r.marks_obtained }}</td>
+          <td class="small">{{ r.percentage|floatformat:1 }}%</td>
+          <td><span class="grade-badge grade-{{ r.grade|cut:'+' }}">{{ r.grade }}</span></td>
+          <td class="small">{{ r.grade_point }}</td>
+          <td>
+            {% if r.is_pass %}
+              <span class="badge bg-success">Pass</span>
+            {% else %}
+              <span class="badge bg-danger">Fail</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+          <tr><td colspan="10" class="text-center text-muted py-5">No results found for this selection.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+fetch('/api/chart-data/?semester={{ sel_semester }}')
+  .then(r => r.json())
+  .then(data => {
+    const ctx = document.getElementById('perfChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: data.labels,
+        datasets: [
+          {
+            label: 'Marks Obtained',
+            data: data.marks,
+            backgroundColor: data.colors,
+            borderRadius: 6,
+          },
+          {
+            label: 'Max Marks',
+            data: data.max_marks,
+            backgroundColor: 'rgba(67,97,238,0.08)',
+            borderRadius: 6,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'top' } },
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+  });
+</script>
+{% endblock %}

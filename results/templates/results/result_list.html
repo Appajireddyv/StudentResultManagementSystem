@@ -1,0 +1,102 @@
+{% extends 'results/base.html' %}
+{% block title %}Results – SRMS{% endblock %}
+{% block page_title %}Results / Marks{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h5 class="fw-bold mb-1">Results Management</h5>
+    <p class="text-muted small mb-0">{{ results.count }} result(s)</p>
+  </div>
+  <a href="{% url 'result_add' %}" class="btn btn-primary">
+    <i class="bi bi-pencil-square me-1"></i>Enter Marks
+  </a>
+</div>
+
+<!-- Filters -->
+<div class="stat-card mb-4">
+  <form method="get" class="row g-2 align-items-end">
+    <div class="col-sm-4">
+      <label class="form-label small fw-semibold">Student</label>
+      <select name="student" class="form-select form-select-sm">
+        <option value="">All Students</option>
+        {% for s in students %}
+          <option value="{{ s.pk }}" {% if sel_student == s.pk|stringformat:'s' %}selected{% endif %}>
+            {{ s.user.get_full_name }} ({{ s.roll_number }})
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-sm-3">
+      <label class="form-label small fw-semibold">Subject</label>
+      <select name="subject" class="form-select form-select-sm">
+        <option value="">All Subjects</option>
+        {% for s in subjects %}
+          <option value="{{ s.pk }}" {% if sel_subject == s.pk|stringformat:'s' %}selected{% endif %}>{{ s.code }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-sm-2">
+      <label class="form-label small fw-semibold">Semester</label>
+      <input type="number" name="semester" value="{{ sel_semester }}" class="form-control form-control-sm" placeholder="1-8" min="1" max="8">
+    </div>
+    <div class="col-sm-3">
+      <button type="submit" class="btn btn-outline-primary btn-sm w-100">Filter</button>
+    </div>
+  </form>
+</div>
+
+<div class="table-card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Student</th>
+          <th>Subject</th>
+          <th>Sem</th>
+          <th>Marks</th>
+          <th>%</th>
+          <th>Grade</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in results %}
+        <tr>
+          <td class="text-muted small">{{ forloop.counter }}</td>
+          <td>
+            <div class="fw-semibold small">{{ r.student.user.get_full_name }}</div>
+            <div class="text-muted" style="font-size:11px;">{{ r.student.roll_number }}</div>
+          </td>
+          <td>
+            <div class="fw-semibold small">{{ r.subject.code }}</div>
+            <div class="text-muted" style="font-size:11px;">{{ r.subject.name|truncatechars:25 }}</div>
+          </td>
+          <td class="small">{{ r.semester }}</td>
+          <td class="small">{{ r.marks_obtained }}/{{ r.subject.max_marks }}</td>
+          <td class="small">{{ r.percentage|floatformat:1 }}%</td>
+          <td><span class="grade-badge grade-{{ r.grade|cut:'+' }}">{{ r.grade }}</span></td>
+          <td>
+            {% if r.is_pass %}
+              <span class="badge bg-success">Pass</span>
+            {% else %}
+              <span class="badge bg-danger">Fail</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="btn-group btn-group-sm">
+              <a href="{% url 'result_edit' r.pk %}" class="btn btn-outline-secondary" title="Edit"><i class="bi bi-pencil"></i></a>
+              <a href="{% url 'result_delete' r.pk %}" class="btn btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+          <tr><td colspan="9" class="text-center text-muted py-5">No results found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
