@@ -6,7 +6,14 @@ SECRET_KEY = 'django-insecure-student-result-system-change-in-production'
 
 DEBUG = False
 
-ALLOWED_HOSTS = ['*']
+CSRF_TRUSTED_ORIGINS = [
+    "https://studentresultmanagementsystem-n5oj.onrender.com",
+]
+
+ALLOWED_HOSTS = [
+    "studentresultmanagementsystem-n5oj.onrender.com"
+    ]
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
